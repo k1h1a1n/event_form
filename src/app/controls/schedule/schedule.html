@@ -9,6 +9,7 @@
       matInput
       placeholder="DD/MM/YYYY"
       [matDatepicker]="datePicker"
+      [min]="minDate()"
       [value]="dateForPicker()"
       (dateChange)="setDate($event.value, dateInput.value)"
       (blur)="onTouched()"

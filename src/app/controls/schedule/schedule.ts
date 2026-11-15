@@ -1,4 +1,13 @@
-import { Component, computed, input, linkedSignal, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+  viewChild,
+} from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
@@ -48,6 +57,9 @@ export class Schedule implements ControlValueAccessor, Validator {
    */
   readonly touched = input(false);
 
+  /** Earliest day the calendar lets the user pick. The form using the control decides (or not). */
+  readonly minDate = input<Date | null>(null);
+
   /**
    * The last value the form wrote in. The three inputs start from this, and only this, so they
    * change when the form writes but never because of our own updates: what the user is typing
@@ -69,6 +81,27 @@ export class Schedule implements ControlValueAccessor, Validator {
   protected readonly shownIssues = computed(() =>
     this.touched() ? this.issues() : NO_SCHEDULE_ISSUES,
   );
+
+  // The three inputs, so focus can be moved to the one with a problem.
+  private readonly dateInput = viewChild.required<ElementRef<HTMLInputElement>>('dateInput');
+  private readonly timeInput = viewChild.required<ElementRef<HTMLInputElement>>('timeInput');
+  private readonly durationInput = viewChild.required<ElementRef<HTMLInputElement>>('duration');
+
+  constructor() {
+    // To focus a field, [formField] calls focus() on the control's host element, <app-schedule>.
+    // That element can't take focus itself, so pass it on to the right input instead.
+    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    host.focus = () => this.focusFirstProblem();
+  }
+
+  /** Focuses the first part with a problem, or the date when none has one. */
+  focusFirstProblem(): void {
+    const issues = this.issues();
+    if (issues.date) this.dateInput().nativeElement.focus();
+    else if (issues.startTime) this.timeInput().nativeElement.focus();
+    else if (issues.durationMinutes) this.durationInput().nativeElement.focus();
+    else this.dateInput().nativeElement.focus();
+  }
 
   // Callbacks the form gives us. Until it does, they do nothing.
   private onChange: (value: ScheduleValue | null) => void = () => {};

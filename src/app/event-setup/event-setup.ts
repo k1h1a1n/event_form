@@ -1,4 +1,3 @@
-import { JsonPipe } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
 import { FormField, form } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,7 +14,6 @@ import { eventSetupSchema } from '../validators/event-setup.schema';
 @Component({
   imports: [
     FormField,
-    JsonPipe,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
@@ -30,9 +28,10 @@ import { eventSetupSchema } from '../validators/event-setup.schema';
   templateUrl: './event-setup.html',
 })
 export class EventSetup {
-  /** 1. The data, kept in a plain signal (with sample values so you can see them load). */
+  /** 1. The data, kept in a plain signal. Starts with sample values. */
   protected readonly model = signal<EventSetupModel>({
-    name: '',
+    name: 'Angular Meetup',
+    description: 'An evening of short talks about Angular, followed by networking.',
     schedule: { date: '2026-12-05', startTime: '18:30', durationMinutes: 90 },
   });
 
@@ -41,6 +40,12 @@ export class EventSetup {
    *    The second argument is the schema: the rules the data must follow.
    */
   protected readonly eventForm = form(this.model, eventSetupSchema);
+
+  /** Which tab is open: 0 = General, 1 = Tickets. */
+  protected readonly selectedTab = signal(0);
+
+  /** Events can't be in the past, so the calendar starts at today. */
+  protected readonly today = new Date();
 
   /**
    * This form's own messages about the schedule (required, starts in the future), once touched.
@@ -56,8 +61,37 @@ export class EventSetup {
     if (this.eventForm().invalid()) {
       // Mark every field as touched, so fields the user never visited show their errors too.
       this.eventForm().markAsTouched();
+      this.focusFirstError();
       return;
     }
     console.log('Event form value:', this.eventForm().value());
+  }
+
+  /** Puts the cursor in the first field (in page order) that has an error. */
+  private focusFirstError(): void {
+    // errorSummary() lists the errors of the whole form, sorted by where their fields are on the page.
+    const firstError = this.eventForm().errorSummary()[0];
+    if (!firstError?.fieldTree) return;
+
+    const focus = () => firstError.fieldTree().focusBoundControl();
+
+    // All fields with rules are on the General tab for now. If it's already open, focus right
+    // away. Otherwise open it, and focus once it has finished sliding in (tabShown below):
+    // a field on a tab that isn't showing yet can't take focus.
+    if (this.selectedTab() === 0) {
+      focus();
+    } else {
+      this.focusWhenTabShown = focus;
+      this.selectedTab.set(0);
+    }
+  }
+
+  /** Something to focus once the tab that is opening has finished its animation. */
+  private focusWhenTabShown: (() => void) | null = null;
+
+  /** Called by the tab group when a newly opened tab has finished sliding in. */
+  protected tabShown(): void {
+    this.focusWhenTabShown?.();
+    this.focusWhenTabShown = null;
   }
 }

@@ -10,7 +10,14 @@
       preserveContent: keep a tab's content alive after you leave it. The Schedule control's
       errors only count while it exists, so this lets Save see them from the Tickets tab too.
     -->
-    <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start" preserveContent>
+    <mat-tab-group
+      mat-stretch-tabs="false"
+      mat-align-tabs="start"
+      preserveContent
+      [selectedIndex]="selectedTab()"
+      (selectedIndexChange)="selectedTab.set($event)"
+      (animationDone)="tabShown()"
+    >
       <!-- General tab -->
       <mat-tab>
         <ng-template mat-tab-label>
@@ -28,23 +35,20 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Description (optional)</mat-label>
-            <textarea matInput rows="4"></textarea>
-            <mat-hint align="end">0 / 500</mat-hint>
+            <textarea matInput rows="4" [formField]="eventForm.description"></textarea>
+            <mat-hint align="end">{{ eventForm.description().value().length }} / 500</mat-hint>
           </mat-form-field>
 
           <fieldset class="group">
             <legend>Schedule</legend>
             <!-- 3. [formField] connects the form's schedule field to the control. -->
-            <app-schedule [formField]="eventForm.schedule" />
+            <!-- minDate: days before today are greyed out in the calendar. -->
+            <app-schedule [formField]="eventForm.schedule" [minDate]="today" />
             <!-- This form's own rules about the schedule; the control shows its inner messages itself. -->
             @for (message of scheduleMessages(); track message) {
               <p class="field-error">{{ message }}</p>
             }
-          </fieldset>
-
-          <!-- Temporary: shows the form's data, so you can watch it change as you type. -->
-          <pre class="debug">{{ model() | json }}</pre>
-        </div>
+          </fieldset>        </div>
       </mat-tab>
 
       <!-- Tickets tab -->
