@@ -1,4 +1,4 @@
-import { required, schema, validate } from '@angular/forms/signals';
+import { maxLength, minLength, required, schema, validate } from '@angular/forms/signals';
 import { EventSetupModel } from '../models/event-setup.model';
 import { scheduleStart } from './schedule.validators';
 
@@ -17,4 +17,10 @@ export const eventSetupSchema = schema<EventSetupModel>((path) => {
       ? { kind: 'startsInPast', message: 'The event has to start in the future.' }
       : undefined;
   });
+
+  // The Ticket tiers control checks each row itself (ticket-tier.validators.ts). How many tiers
+  // this event needs is decided here. maxLength also reaches the control as its `maxLength`
+  // input, so it stops offering "Add" at the limit.
+  minLength(path.ticketTiers, 1, { message: 'Add at least one ticket tier.' });
+  maxLength(path.ticketTiers, 10, { message: 'An event can have at most 10 ticket tiers.' });
 });

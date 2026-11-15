@@ -43,14 +43,13 @@ export class EventSetup {
   /** Events can't be in the past, so the calendar starts at today. */
   protected readonly today = new Date();
 
-  /**
-   * This form's own messages about the schedule (required, starts in the future), once touched.
-   * Errors from the control's validate() carry no message: the control shows those itself.
-   */
-  protected readonly scheduleMessages = computed(() => {
-    const schedule = this.eventForm.schedule();
-    return schedule.touched() ? schedule.errors().flatMap((error) => error.message ?? []) : [];
-  });
+  /** This form's own messages about the schedule (starts in the future), once touched. */
+  protected readonly scheduleMessages = computed(() => formMessages(this.eventForm.schedule()));
+
+  /** This form's own messages about the ticket tiers (how many), once touched. */
+  protected readonly ticketTierMessages = computed(() =>
+    formMessages(this.eventForm.ticketTiers()),
+  );
 
   /** Save button: print the form's value, but only when every rule passes. */
   protected save(): void {
@@ -77,16 +76,18 @@ export class EventSetup {
     const firstError = this.eventForm().errorSummary()[0];
     if (!firstError?.fieldTree) return;
 
-    const focus = () => firstError.fieldTree().focusBoundControl();
+    const field = firstError.fieldTree();
+    const focus = () => field.focusBoundControl();
 
-    // All fields with rules are on the General tab for now. If it's already open, focus right
-    // away. Otherwise open it, and focus once it has finished sliding in (tabShown below):
-    // a field on a tab that isn't showing yet can't take focus.
-    if (this.selectedTab() === 0) {
+    // Ticket tiers is on the Tickets tab; everything else is on General. If that tab is already
+    // open, focus right away. Otherwise open it, and focus once it has finished sliding in
+    // (tabShown below): a field on a tab that isn't showing yet can't take focus.
+    const tab = field === this.eventForm.ticketTiers() ? 1 : 0;
+    if (this.selectedTab() === tab) {
       focus();
     } else {
       this.focusWhenTabShown = focus;
-      this.selectedTab.set(0);
+      this.selectedTab.set(tab);
     }
   }
 
@@ -98,4 +99,12 @@ export class EventSetup {
     this.focusWhenTabShown?.();
     this.focusWhenTabShown = null;
   }
+}
+
+/**
+ * A field's messages from this form's own rules, once it is touched. Errors from a control's
+ * validate() carry no message: the control shows those itself, next to the input concerned.
+ */
+function formMessages(field: { touched(): boolean; errors(): { message?: string }[] }): string[] {
+  return field.touched() ? field.errors().flatMap((error) => error.message ?? []) : [];
 }

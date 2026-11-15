@@ -7,8 +7,8 @@
   <mat-card appearance="outlined" class="card">
     <!-- mat-stretch-tabs="false": tabs keep their natural width and sit on the left -->
     <!--
-      preserveContent: keep a tab's content alive after you leave it. The Schedule control's
-      errors only count while it exists, so this lets Save see them from the Tickets tab too.
+      preserveContent: keep a tab's content alive after you leave it. A control's own errors
+      (its validate()) only count while it exists, so this lets Save see them from either tab.
     -->
     <mat-tab-group
       mat-stretch-tabs="false"
@@ -61,7 +61,11 @@
         <div class="tab-body">
           <fieldset class="group">
             <legend>Ticket tiers</legend>
-            <app-ticket-tiers></app-ticket-tiers>
+            <app-ticket-tiers [formField]="eventForm.ticketTiers" />
+            <!-- This form's own rules about the tiers (how many); the control shows row messages itself. -->
+            @for (message of ticketTierMessages(); track message) {
+              <p class="field-error">{{ message }}</p>
+            }
           </fieldset>
         </div>
       </mat-tab>

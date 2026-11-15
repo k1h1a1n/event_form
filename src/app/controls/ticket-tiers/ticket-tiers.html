@@ -1,41 +1,61 @@
-<!-- Two sample rows, just for the design. Later these come from a @for loop. -->
-<ol class="rows">
-  <li class="row">
-    <mat-form-field appearance="outline" class="name">
-      <mat-label>Tier name</mat-label>
-      <input matInput autocomplete="off" value="Early bird" />
-    </mat-form-field>
+<!-- One row per tier. [value] shows the row's starting value; (input) reports what the user typed; (blur) marks it touched. -->
+<!-- Each <mat-hint class="error"> is empty (and invisible) while its part has no problem to show. -->
+@if (rows().length > 0) {
+  <ol class="rows">
+    @for (row of rows(); track row.id; let index = $index) {
+      <li class="row">
+        <mat-form-field appearance="outline" class="name">
+          <mat-label>Tier name</mat-label>
+          <input
+            #label
+            matInput
+            autocomplete="off"
+            [value]="row.seed.label"
+            (input)="setLabel(row, label.value)"
+            (blur)="onTouched()"
+          />
+          <mat-hint class="error">{{ shownIssues()[index].label }}</mat-hint>
+        </mat-form-field>
 
-    <mat-form-field appearance="outline" class="price">
-      <mat-label>Price</mat-label>
-      <input matInput type="number" min="0" step="1" inputmode="decimal" value="20" />
-      <span matTextSuffix>INR</span>
-    </mat-form-field>
+        <mat-form-field appearance="outline" class="price">
+          <mat-label>Price</mat-label>
+          <input
+            #price
+            matInput
+            type="number"
+            min="0"
+            step="0.01"
+            inputmode="decimal"
+            [value]="row.seed.price ?? ''"
+            (input)="setPrice(row, price.value)"
+            (blur)="onTouched()"
+          />
+          <span matTextSuffix>{{ currency() }}</span>
+          <mat-hint class="error">{{ shownIssues()[index].price }}</mat-hint>
+        </mat-form-field>
 
-    <button mat-icon-button type="button" class="remove" aria-label="Remove Early bird">
-      <mat-icon fontSet="material-symbols-outlined">delete</mat-icon>
-    </button>
-  </li>
+        <button
+          mat-icon-button
+          type="button"
+          class="remove"
+          [attr.aria-label]="'Remove ' + (row.tier.label.trim() || 'tier ' + (index + 1))"
+          (click)="remove(row)"
+        >
+          <mat-icon fontSet="material-symbols-outlined">delete</mat-icon>
+        </button>
+      </li>
+    }
+  </ol>
+} @else {
+  <p class="empty">No ticket tiers yet.</p>
+}
 
-  <li class="row">
-    <mat-form-field appearance="outline" class="name">
-      <mat-label>Tier name</mat-label>
-      <input matInput autocomplete="off" value="Standard" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="price">
-      <mat-label>Price</mat-label>
-      <input matInput type="number" min="0" step="1" inputmode="decimal" value="35" />
-      <span matTextSuffix>INR</span>
-    </mat-form-field>
-
-    <button mat-icon-button type="button" class="remove" aria-label="Remove Standard">
-      <mat-icon fontSet="material-symbols-outlined">delete</mat-icon>
-    </button>
-  </li>
-</ol>
-
-<button mat-stroked-button type="button">
-  <mat-icon fontSet="material-symbols-outlined">add</mat-icon>
-  Add ticket tier
-</button>
+<!-- The form decides the maximum (maxLength); at the limit, explain instead of offering "Add". -->
+@if (atLimit()) {
+  <p class="hint">That is the maximum of {{ maxLength() }} tiers.</p>
+} @else {
+  <button mat-stroked-button type="button" class="add" (click)="add()">
+    <mat-icon fontSet="material-symbols-outlined">add</mat-icon>
+    Add ticket tier
+  </button>
+}

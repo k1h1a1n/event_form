@@ -18,10 +18,22 @@
   align-items: start;
 }
 
-// Line the delete button up with the middle of the 56px-tall fields.
+// Line the delete button up with the middle of the fields.
 .remove {
   margin-top: 0.25rem;
   color: var(--mat-sys-on-surface-variant);
+}
+
+// "No ticket tiers yet." and "That is the maximum of 10 tiers."
+.empty,
+.hint {
+  margin: 0 0 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// Validation message under a field.
+.error {
+  color: var(--mat-sys-error);
 }
 
 // On a phone: name on its own line, then price + delete button.
