@@ -6,3 +6,6 @@ export interface EventSetupModel {
   description: string;
   schedule: ScheduleValue | null; // null while nothing is entered
 }
+
+/** A form with nothing entered: what the page starts with, and what Reset goes back to. */
+export const EMPTY_EVENT_SETUP: EventSetupModel = { name: '', description: '', schedule: null };

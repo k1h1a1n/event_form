@@ -14,7 +14,8 @@ html {
         tertiary: mat.$blue-palette,
       ),
       typography: Roboto,
-      density: 0,
+      // Negative density makes fields and buttons more compact (0 is Material's default).
+      density: -2,
     )
   );
 }

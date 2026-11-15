@@ -19,6 +19,13 @@
   flex: 1 1 8rem;
 }
 
+// "Ends at 8:00 PM · 1 h 30 min" under the fields.
+.summary {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
 // Validation message under a field.
 .error {
   color: var(--mat-sys-error);

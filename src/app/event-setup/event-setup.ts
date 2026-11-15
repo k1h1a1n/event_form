@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Schedule } from '../controls/schedule/schedule';
 import { TicketTiers } from '../controls/ticket-tiers/ticket-tiers';
-import { EventSetupModel } from '../models/event-setup.model';
+import { EMPTY_EVENT_SETUP } from '../models/event-setup.model';
 import { eventSetupSchema } from '../validators/event-setup.schema';
 
 @Component({
@@ -28,12 +28,8 @@ import { eventSetupSchema } from '../validators/event-setup.schema';
   templateUrl: './event-setup.html',
 })
 export class EventSetup {
-  /** 1. The data, kept in a plain signal. Starts with sample values. */
-  protected readonly model = signal<EventSetupModel>({
-    name: 'Angular Meetup',
-    description: 'An evening of short talks about Angular, followed by networking.',
-    schedule: { date: '2026-12-05', startTime: '18:30', durationMinutes: 90 },
-  });
+  /** 1. The data, kept in a plain signal. Starts blank. */
+  protected readonly model = signal(EMPTY_EVENT_SETUP);
 
   /**
    * 2. The signal form built on that data. `eventForm.name` is the field for `model().name`.
@@ -65,6 +61,14 @@ export class EventSetup {
       return;
     }
     console.log('Event form value:', this.eventForm().value());
+  }
+
+  /**
+   * Reset button: blank every field, and forget touched/dirty so no error messages show.
+   * (The form writes the blank value into the Schedule control through its writeValue.)
+   */
+  protected reset(): void {
+    this.eventForm().reset(EMPTY_EVENT_SETUP);
   }
 
   /** Puts the cursor in the first field (in page order) that has an error. */

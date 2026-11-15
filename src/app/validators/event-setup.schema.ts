@@ -8,7 +8,9 @@ export const eventSetupSchema = schema<EventSetupModel>((path) => {
 
   // The Schedule control checks its own parts (schedule.validators.ts) and treats an empty
   // schedule as fine. Whether this form needs one, and when it may start, is decided here.
-  required(path.schedule, { message: 'Choose when the event takes place.' });
+  // No message for required: [formField] passes it to the control's `required` input, and the
+  // control then shows "Enter a date." etc. under each empty part itself.
+  required(path.schedule);
   validate(path.schedule, ({ value }) => {
     const start = scheduleStart(value());
     return start !== null && start.getTime() <= Date.now()

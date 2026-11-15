@@ -1,4 +1,4 @@
-import { ScheduleIssues, ScheduleValue } from '../models/schedule.model';
+import { EMPTY_SCHEDULE, ScheduleIssues, ScheduleValue } from '../models/schedule.model';
 import { isoDateToDate } from '../utils/date-time';
 
 /** Longest event the schedule accepts: one day. */
@@ -48,11 +48,12 @@ export function isScheduleEmpty(schedule: ScheduleValue | null): boolean {
 /**
  * Every schedule rule at once: one message (or null) per part.
  *
- * An empty schedule has no issues: whether a schedule is required is up to the form using the
+ * An empty schedule has no issues unless it is `required`: that is up to the form using the
  * control (see event-setup.schema.ts). Once any part is entered, every part is needed.
  */
-export function scheduleIssues(schedule: ScheduleValue | null): ScheduleIssues {
-  if (schedule === null || isScheduleEmpty(schedule)) return NO_SCHEDULE_ISSUES;
+export function scheduleIssues(schedule: ScheduleValue | null, required = false): ScheduleIssues {
+  if (isScheduleEmpty(schedule) && !required) return NO_SCHEDULE_ISSUES;
+  schedule ??= EMPTY_SCHEDULE;
   return {
     date: dateIssue(schedule.date),
     startTime: startTimeIssue(schedule.startTime),
