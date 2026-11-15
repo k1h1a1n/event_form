@@ -1,18 +1,44 @@
 <!-- Three fields side by side; they wrap onto new lines on narrow screens. -->
+<!-- [value] shows the current value; (input) reports what the user typed; (blur) marks it touched. -->
 <div class="parts">
   <mat-form-field appearance="outline" class="date">
     <mat-label>Date</mat-label>
-    <input matInput type="date" />
+    <input
+      #date
+      matInput
+      type="date"
+      [value]="schedule().date"
+      (input)="setDate(date.value)"
+      (blur)="onTouched()"
+    />
   </mat-form-field>
 
   <mat-form-field appearance="outline" class="time">
     <mat-label>Start time</mat-label>
-    <input matInput type="time" />
+    <input
+      #startTime
+      matInput
+      type="time"
+      [value]="schedule().startTime"
+      (input)="setStartTime(startTime.value)"
+      (blur)="onTouched()"
+    />
   </mat-form-field>
 
   <mat-form-field appearance="outline" class="duration">
     <mat-label>Duration</mat-label>
-    <input matInput type="number" min="0" step="15" />
+    <input
+      #duration
+      matInput
+      type="number"
+      min="0"
+      step="15"
+      [value]="schedule().durationMinutes ?? ''"
+      (input)="setDuration(duration.value)"
+      (blur)="onTouched()"
+    />
     <span matTextSuffix>min</span>
+    <!-- Empty (and invisible) while there is no error to show. -->
+    <mat-hint class="error">{{ durationError() }}</mat-hint>
   </mat-form-field>
 </div>

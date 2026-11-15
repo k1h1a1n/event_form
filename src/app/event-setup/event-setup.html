@@ -6,7 +6,11 @@
 
   <mat-card appearance="outlined" class="card">
     <!-- mat-stretch-tabs="false": tabs keep their natural width and sit on the left -->
-    <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
+    <!--
+      preserveContent: keep a tab's content alive after you leave it. The Schedule control's
+      errors only count while it exists, so this lets Save see them from the Tickets tab too.
+    -->
+    <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start" preserveContent>
       <!-- General tab -->
       <mat-tab>
         <ng-template mat-tab-label>
@@ -17,7 +21,9 @@
         <div class="tab-body">
           <mat-form-field appearance="outline">
             <mat-label>Event name</mat-label>
-            <input matInput autocomplete="off" />
+            <input matInput autocomplete="off" [formField]="eventForm.name" />
+            <!-- Shown by Material only when the field is invalid and touched. -->
+            <mat-error>{{ eventForm.name().errors()[0]?.message }}</mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
@@ -28,8 +34,12 @@
 
           <fieldset class="group">
             <legend>Schedule</legend>
-            <app-schedule></app-schedule>
+            <!-- 3. [formField] connects the form's schedule field to the control. -->
+            <app-schedule [formField]="eventForm.schedule" />
           </fieldset>
+
+          <!-- Temporary: shows the form's data, so you can watch it change as you type. -->
+          <pre class="debug">{{ model() | json }}</pre>
         </div>
       </mat-tab>
 
@@ -48,5 +58,10 @@
         </div>
       </mat-tab>
     </mat-tab-group>
+
+    <!-- Save bar, below both tabs -->
+    <div class="actions">
+      <button mat-flat-button type="button" (click)="save()">Save</button>
+    </div>
   </mat-card>
 </main>

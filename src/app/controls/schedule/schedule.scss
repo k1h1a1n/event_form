@@ -18,3 +18,8 @@
 .duration {
   flex: 1 1 8rem;
 }
+
+// Validation message under a field.
+.error {
+  color: var(--mat-sys-error);
+}
