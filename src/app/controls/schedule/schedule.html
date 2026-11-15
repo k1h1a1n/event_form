@@ -1,28 +1,45 @@
 <!-- Three fields side by side; they wrap onto new lines on narrow screens. -->
-<!-- [value] shows the current value; (input) reports what the user typed; (blur) marks it touched. -->
+<!-- [value] shows what the form wrote; the change events report what the user picked or typed; (blur) marks it touched. -->
+<!-- Each <mat-hint class="error"> is empty (and invisible) while its part has no problem to show. -->
 <div class="parts">
   <mat-form-field appearance="outline" class="date">
     <mat-label>Date</mat-label>
     <input
-      #date
+      #dateInput
       matInput
-      type="date"
-      [value]="schedule().date"
-      (input)="setDate(date.value)"
+      placeholder="DD/MM/YYYY"
+      [matDatepicker]="datePicker"
+      [value]="dateForPicker()"
+      (dateChange)="setDate($event.value, dateInput.value)"
       (blur)="onTouched()"
     />
+    <!-- Calendar icon button that opens Material's datepicker below. -->
+    <mat-datepicker-toggle matIconSuffix [for]="datePicker" />
+    <mat-datepicker #datePicker />
+    <mat-hint class="error">{{ shownIssues().date }}</mat-hint>
   </mat-form-field>
 
   <mat-form-field appearance="outline" class="time">
     <mat-label>Start time</mat-label>
     <input
-      #startTime
+      #timeInput
       matInput
       type="time"
-      [value]="schedule().startTime"
-      (input)="setStartTime(startTime.value)"
+      [value]="written().startTime"
+      (input)="setStartTime(timeInput.value)"
       (blur)="onTouched()"
     />
+    <!-- Material hides the browser's own clock icon, so this button opens the browser's time picker. -->
+    <button
+      mat-icon-button
+      matIconSuffix
+      type="button"
+      aria-label="Choose a start time"
+      (click)="timeInput.showPicker()"
+    >
+      <mat-icon fontSet="material-symbols-outlined">schedule</mat-icon>
+    </button>
+    <mat-hint class="error">{{ shownIssues().startTime }}</mat-hint>
   </mat-form-field>
 
   <mat-form-field appearance="outline" class="duration">
@@ -33,12 +50,11 @@
       type="number"
       min="0"
       step="15"
-      [value]="schedule().durationMinutes ?? ''"
+      [value]="written().durationMinutes ?? ''"
       (input)="setDuration(duration.value)"
       (blur)="onTouched()"
     />
     <span matTextSuffix>min</span>
-    <!-- Empty (and invisible) while there is no error to show. -->
-    <mat-hint class="error">{{ durationError() }}</mat-hint>
+    <mat-hint class="error">{{ shownIssues().durationMinutes }}</mat-hint>
   </mat-form-field>
 </div>

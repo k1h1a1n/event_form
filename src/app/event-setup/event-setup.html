@@ -36,6 +36,10 @@
             <legend>Schedule</legend>
             <!-- 3. [formField] connects the form's schedule field to the control. -->
             <app-schedule [formField]="eventForm.schedule" />
+            <!-- This form's own rules about the schedule; the control shows its inner messages itself. -->
+            @for (message of scheduleMessages(); track message) {
+              <p class="field-error">{{ message }}</p>
+            }
           </fieldset>
 
           <!-- Temporary: shows the form's data, so you can watch it change as you type. -->

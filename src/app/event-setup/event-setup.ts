@@ -1,20 +1,16 @@
 import { JsonPipe } from '@angular/common';
-import { Component, signal } from '@angular/core';
-import { FormField, form, required } from '@angular/forms/signals';
+import { Component, computed, signal } from '@angular/core';
+import { FormField, form } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTabsModule } from '@angular/material/tabs';
+import { Schedule } from '../controls/schedule/schedule';
 import { TicketTiers } from '../controls/ticket-tiers/ticket-tiers';
-import { Schedule, ScheduleValue } from '../controls/schedule/schedule';
-
-/** The shape of the data this form edits. Name and schedule for now. */
-interface EventSetupModel {
-  name: string;
-  schedule: ScheduleValue;
-}
+import { EventSetupModel } from '../models/event-setup.model';
+import { eventSetupSchema } from '../validators/event-setup.schema';
 
 @Component({
   imports: [
@@ -44,9 +40,15 @@ export class EventSetup {
    * 2. The signal form built on that data. `eventForm.name` is the field for `model().name`.
    *    The second argument is the schema: the rules the data must follow.
    */
-  protected readonly eventForm = form(this.model, (path) => {
-    required(path.name, { message: 'Enter an event name.' });
-    // The duration rules live in the Schedule control itself (its validate() method).
+  protected readonly eventForm = form(this.model, eventSetupSchema);
+
+  /**
+   * This form's own messages about the schedule (required, starts in the future), once touched.
+   * Errors from the control's validate() carry no message: the control shows those itself.
+   */
+  protected readonly scheduleMessages = computed(() => {
+    const schedule = this.eventForm.schedule();
+    return schedule.touched() ? schedule.errors().flatMap((error) => error.message ?? []) : [];
   });
 
   /** Save button: print the form's value, but only when every rule passes. */

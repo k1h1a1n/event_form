@@ -68,6 +68,13 @@
   border-top: 1px solid var(--mat-sys-outline-variant);
 }
 
+// A form-level message under a group of fields (e.g. "Choose when the event takes place.").
+.field-error {
+  margin: 0;
+  color: var(--mat-sys-error);
+  font: var(--mat-sys-body-small);
+}
+
 // ---- Groups of fields (Schedule, Ticket tiers) ----
 
 // <fieldset> groups related inputs; remove its default border and padding.
