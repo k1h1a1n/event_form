@@ -1,10 +1,10 @@
 import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { EventSetup } from './event-setup/event-setup';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  templateUrl: './app.html',
+  imports: [EventSetup],
+  template: `<app-event-setup />`,
   styleUrl: './app.scss'
 })
 export class App {

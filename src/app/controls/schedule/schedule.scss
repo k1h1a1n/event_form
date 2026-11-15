@@ -1,0 +1,20 @@
+// A custom element is `display: inline` by default; make it a block like a normal field.
+:host {
+  display: block;
+}
+
+.parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+}
+
+// Each field gets a sensible width and can grow; on a phone they stack.
+.date,
+.time {
+  flex: 1 1 11rem;
+}
+
+.duration {
+  flex: 1 1 8rem;
+}

@@ -1,1 +1,52 @@
-<p>event-setup works!</p>
+<main class="page">
+  <header class="page-header">
+    <h1>Event setup</h1>
+    <p>Describe the event under General, then set its prices under Tickets.</p>
+  </header>
+
+  <mat-card appearance="outlined" class="card">
+    <!-- mat-stretch-tabs="false": tabs keep their natural width and sit on the left -->
+    <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
+      <!-- General tab -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon fontSet="material-symbols-outlined" class="tab-icon">event</mat-icon>
+          General
+        </ng-template>
+
+        <div class="tab-body">
+          <mat-form-field appearance="outline">
+            <mat-label>Event name</mat-label>
+            <input matInput autocomplete="off" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Description (optional)</mat-label>
+            <textarea matInput rows="4"></textarea>
+            <mat-hint align="end">0 / 500</mat-hint>
+          </mat-form-field>
+
+          <fieldset class="group">
+            <legend>Schedule</legend>
+            <app-schedule></app-schedule>
+          </fieldset>
+        </div>
+      </mat-tab>
+
+      <!-- Tickets tab -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon fontSet="material-symbols-outlined" class="tab-icon">confirmation_number</mat-icon>
+          Tickets
+        </ng-template>
+
+        <div class="tab-body">
+          <fieldset class="group">
+            <legend>Ticket tiers</legend>
+            <app-ticket-tiers></app-ticket-tiers>
+          </fieldset>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+</main>

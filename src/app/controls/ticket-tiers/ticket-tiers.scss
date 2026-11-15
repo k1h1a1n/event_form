@@ -1,0 +1,36 @@
+// A custom element is `display: inline` by default; make it a block like a normal field.
+:host {
+  display: block;
+}
+
+// The list of rows, without the default numbers and indent of <ol>.
+.rows {
+  margin: 0 0 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+// One tier: name (wide) | price (narrow) | remove button.
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(7rem, 1fr) auto;
+  gap: 0 0.75rem;
+  align-items: start;
+}
+
+// Line the delete button up with the middle of the 56px-tall fields.
+.remove {
+  margin-top: 0.25rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// On a phone: name on its own line, then price + delete button.
+@media (max-width: 30rem) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .name {
+    grid-column: 1 / -1;
+  }
+}

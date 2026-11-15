@@ -1,1 +1,18 @@
-<p>schedule works!</p>
+<!-- Three fields side by side; they wrap onto new lines on narrow screens. -->
+<div class="parts">
+  <mat-form-field appearance="outline" class="date">
+    <mat-label>Date</mat-label>
+    <input matInput type="date" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="time">
+    <mat-label>Start time</mat-label>
+    <input matInput type="time" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="duration">
+    <mat-label>Duration</mat-label>
+    <input matInput type="number" min="0" step="15" />
+    <span matTextSuffix>min</span>
+  </mat-form-field>
+</div>

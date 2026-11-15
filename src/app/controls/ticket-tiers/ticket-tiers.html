@@ -1,1 +1,41 @@
-<p>ticket-tiers works!</p>
+<!-- Two sample rows, just for the design. Later these come from a @for loop. -->
+<ol class="rows">
+  <li class="row">
+    <mat-form-field appearance="outline" class="name">
+      <mat-label>Tier name</mat-label>
+      <input matInput autocomplete="off" value="Early bird" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="price">
+      <mat-label>Price</mat-label>
+      <input matInput type="number" min="0" step="1" inputmode="decimal" value="20" />
+      <span matTextSuffix>INR</span>
+    </mat-form-field>
+
+    <button mat-icon-button type="button" class="remove" aria-label="Remove Early bird">
+      <mat-icon fontSet="material-symbols-outlined">delete</mat-icon>
+    </button>
+  </li>
+
+  <li class="row">
+    <mat-form-field appearance="outline" class="name">
+      <mat-label>Tier name</mat-label>
+      <input matInput autocomplete="off" value="Standard" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="price">
+      <mat-label>Price</mat-label>
+      <input matInput type="number" min="0" step="1" inputmode="decimal" value="35" />
+      <span matTextSuffix>INR</span>
+    </mat-form-field>
+
+    <button mat-icon-button type="button" class="remove" aria-label="Remove Standard">
+      <mat-icon fontSet="material-symbols-outlined">delete</mat-icon>
+    </button>
+  </li>
+</ol>
+
+<button mat-stroked-button type="button">
+  <mat-icon fontSet="material-symbols-outlined">add</mat-icon>
+  Add ticket tier
+</button>
