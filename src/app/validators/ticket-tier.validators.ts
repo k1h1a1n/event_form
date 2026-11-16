@@ -14,8 +14,8 @@ export const NO_TICKET_TIER_ISSUES: TicketTierIssues = { label: null, price: nul
 export function ticketTierIssues(tiers: readonly TicketTier[] | null): TicketTierIssues[] {
   return (tiers ?? []).map((tier, index, all) => {
     const takenByEarlierTier = all
-      .slice(0, index)
-      .some((earlier) => sameName(earlier.label, tier.label));
+      .slice(0, index) //will return all tiers before this one
+      .some((earlier) => sameName(earlier.label, tier.label)); //true if any earlier tier has the same name
     return { label: labelIssue(tier.label, takenByEarlierTier), price: priceIssue(tier.price) };
   });
 }
