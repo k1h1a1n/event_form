@@ -10,7 +10,7 @@ import {
 import { EventSetupModel } from '../models/event-setup.model';
 import { scheduleStart } from './schedule.validators';
 
-export const NAME_MAX_LENGTH = 80;
+const NAME_MAX_LENGTH = 80;
 export const DESCRIPTION_MAX_LENGTH = 500;
 
 /** The rules for the event setup form. */

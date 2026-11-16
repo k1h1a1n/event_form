@@ -1,4 +1,13 @@
-import { Component, ElementRef, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
@@ -90,6 +99,7 @@ export class TicketTiers implements ControlValueAccessor, Validator {
   });
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private readonly injector = inject(Injector);
 
   constructor() {
     // To focus a field, [formField] calls focus() on the control's host element,
@@ -103,7 +113,9 @@ export class TicketTiers implements ControlValueAccessor, Validator {
     const row = issues.findIndex((tier) => tier.label !== null || tier.price !== null);
     const inputs = this.host.querySelectorAll<HTMLInputElement>('input'); // name, price, name, …
     const target =
-      row === -1 ? this.host.querySelector<HTMLElement>('.add') : inputs[row * 2 + (issues[row].label ? 0 : 1)];
+      row === -1
+        ? this.host.querySelector<HTMLElement>('.add')
+        : inputs[row * 2 + (issues[row].label ? 0 : 1)];
     target?.focus();
   }
 
@@ -161,6 +173,11 @@ export class TicketTiers implements ControlValueAccessor, Validator {
     // so two rows must never share one object.
     this.rows.update((rows) => [...rows, this.newRow({ label: '', price: null })]);
     this.onChange(this.value());
+    // Once the new row is on screen, put the cursor in its name (the second-last input).
+    afterNextRender(
+      () => [...this.host.querySelectorAll<HTMLInputElement>('input')].at(-2)?.focus(),
+      { injector: this.injector },
+    );
   }
 
   private readonly dialog = inject(MatDialog);

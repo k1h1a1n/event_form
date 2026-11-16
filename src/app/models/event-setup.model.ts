@@ -10,8 +10,16 @@ export interface EventSetupModel {
   ticketTiers: TicketTier[];
 }
 
+/** A form with nothing in it: only a placeholder until the first new event has loaded. */
+export const EMPTY_EVENT_SETUP: EventSetupModel = {
+  name: '',
+  description: '',
+  schedule: null,
+  ticketTiers: [],
+};
+
 /**
- * The values the form starts with, and goes back to after Save or Reset.
+ * The starting values for a new event (the mock API hands them out: see event-api.ts).
  * A function, not a constant, so every call gives fresh objects (the form tags list items with
  * a tracking id, so they must never be shared) and the date is always a week from today.
  */

@@ -5,101 +5,148 @@
   </header>
 
   <mat-card appearance="outlined" class="card">
-    <!-- mat-stretch-tabs="false": tabs keep their natural width and sit on the left -->
     <!--
-      preserveContent: keep a tab's content alive after you leave it. A control's own errors
-      (its validate()) only count while it exists, so this lets Save see them from either tab.
+      A real <form>, so pressing Enter in a field saves (the browser "submits" the form).
+      novalidate: no browser bubbles like "Please fill out this field"; our own messages show.
     -->
-    <mat-tab-group
-      mat-stretch-tabs="false"
-      mat-align-tabs="start"
-      preserveContent
-      [selectedIndex]="selectedTab()"
-      (selectedIndexChange)="selectedTab.set($event)"
-      (animationDone)="tabShown()"
+    <form
+      novalidate
+      [attr.inert]="newEvent.isLoading() || newEvent.error() ? '' : null"
+      (submit)="submitted($event)"
     >
-      <!-- General tab -->
-      <mat-tab>
-        <ng-template mat-tab-label>
-          <mat-icon fontSet="material-symbols-outlined" class="tab-icon">event</mat-icon>
-          General
-          <!-- Alert icon while a field on this tab shows an error; the label is read out by screen readers. -->
-          @if (generalHasErrors()) {
-            <mat-icon fontSet="material-symbols-outlined" class="tab-alert" aria-hidden="false" aria-label="has errors">
-              error
-            </mat-icon>
-          }
-        </ng-template>
-
-        <div class="tab-body">
-          <mat-form-field appearance="outline">
-            <mat-label>Event name</mat-label>
-            <input matInput autocomplete="off" [formField]="eventForm.name" />
-            <!-- Shown by Material only when the field is invalid and touched. -->
-            <mat-error>{{ eventForm.name().errors()[0]?.message }}</mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Description (optional)</mat-label>
-            <textarea matInput rows="4" [formField]="eventForm.description"></textarea>
-            <mat-hint align="end">
-              {{ eventForm.description().value().length }} / {{ descriptionMaxLength }}
-            </mat-hint>
-            <mat-error>{{ eventForm.description().errors()[0]?.message }}</mat-error>
-          </mat-form-field>
-
-          <fieldset class="group">
-            <legend>Schedule</legend>
-            <!-- 3. [formField] connects the form's schedule field to the control. -->
-            <!-- minDate: days before today are greyed out in the calendar. -->
-            <app-schedule [formField]="eventForm.schedule" [minDate]="today" />
-            <!-- This form's own rules about the schedule; the control shows its inner messages itself. -->
-            @for (message of scheduleMessages(); track message) {
-              <p class="field-error">{{ message }}</p>
-            }
-          </fieldset>        </div>
-      </mat-tab>
-
-      <!-- Tickets tab -->
-      <mat-tab>
-        <ng-template mat-tab-label>
-          <mat-icon fontSet="material-symbols-outlined" class="tab-icon">confirmation_number</mat-icon>
-          Tickets
-          @if (ticketsHasErrors()) {
-            <mat-icon fontSet="material-symbols-outlined" class="tab-alert" aria-hidden="false" aria-label="has errors">
-              error
-            </mat-icon>
-          }
-        </ng-template>
-
-        <div class="tab-body">
-          <fieldset class="group">
-            <legend>Ticket tiers</legend>
-            <app-ticket-tiers [formField]="eventForm.ticketTiers" />
-            <!-- This form's own rules about the tiers (how many); the control shows row messages itself. -->
-            @for (message of ticketTierMessages(); track message) {
-              <p class="field-error">{{ message }}</p>
-            }
-          </fieldset>
-        </div>
-      </mat-tab>
-    </mat-tab-group>
-
-    <!-- Save bar, below both tabs -->
-    <div class="actions">
-      <!-- Nothing to reset until the user has changed something. -->
-      <button
-        mat-stroked-button
-        type="button"
-        [disabled]="!eventForm().dirty() || eventForm().submitting()"
-        (click)="reset()"
+      <!-- mat-stretch-tabs="false": tabs keep their natural width and sit on the left -->
+      <!--
+        preserveContent: keep a tab's content alive after you leave it. A control's own errors
+        (its validate()) only count while it exists, so this lets Save see them from either tab.
+      -->
+      <mat-tab-group
+        mat-stretch-tabs="false"
+        mat-align-tabs="start"
+        preserveContent
+        [selectedIndex]="selectedTab()"
+        (selectedIndexChange)="selectedTab.set($event)"
+        (animationDone)="tabShown()"
       >
-        Reset
-      </button>
-      <!-- While the API call runs: disabled, and says what it's doing. -->
-      <button mat-flat-button type="button" [disabled]="eventForm().submitting()" (click)="save()">
-        {{ eventForm().submitting() ? 'Saving…' : 'Save' }}
-      </button>
-    </div>
+        <!-- General tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon fontSet="material-symbols-outlined" class="tab-icon">event</mat-icon>
+            General
+            <!-- Alert icon while a field on this tab shows an error; the label is read out by screen readers. -->
+            @if (generalHasErrors()) {
+              <mat-icon
+                fontSet="material-symbols-outlined"
+                class="tab-alert"
+                aria-hidden="false"
+                aria-label="has errors"
+              >
+                error
+              </mat-icon>
+            }
+          </ng-template>
+
+          <div class="tab-body">
+            <mat-form-field appearance="outline">
+              <mat-label>Event name</mat-label>
+              <input matInput autocomplete="off" [formField]="eventForm.name" />
+              <!-- Shown by Material only when the field is invalid and touched. -->
+              <mat-error>{{ eventForm.name().errors()[0]?.message }}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Description (optional)</mat-label>
+              <textarea matInput rows="4" [formField]="eventForm.description"></textarea>
+              <mat-hint align="end">
+                {{ eventForm.description().value().length }} / {{ descriptionMaxLength }}
+              </mat-hint>
+              <mat-error>{{ eventForm.description().errors()[0]?.message }}</mat-error>
+            </mat-form-field>
+
+            <fieldset class="group">
+              <legend>Schedule</legend>
+              <!-- 3. [formField] connects the form's schedule field to the control. -->
+              <!-- minDate: days before today are greyed out in the calendar. -->
+              <app-schedule [formField]="eventForm.schedule" [minDate]="today" />
+              <!-- This form's own rules about the schedule; the control shows its inner messages itself. -->
+              @for (message of scheduleMessages(); track message) {
+                <p class="field-error">{{ message }}</p>
+              }
+            </fieldset>
+          </div>
+        </mat-tab>
+
+        <!-- Tickets tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon fontSet="material-symbols-outlined" class="tab-icon"
+              >confirmation_number</mat-icon
+            >
+            Tickets
+            @if (ticketsHasErrors()) {
+              <mat-icon
+                fontSet="material-symbols-outlined"
+                class="tab-alert"
+                aria-hidden="false"
+                aria-label="has errors"
+              >
+                error
+              </mat-icon>
+            }
+          </ng-template>
+
+          <div class="tab-body">
+            <fieldset class="group">
+              <legend>Ticket tiers</legend>
+              <app-ticket-tiers [formField]="eventForm.ticketTiers" />
+              <!-- This form's own rules about the tiers (how many); the control shows row messages itself. -->
+              @for (message of ticketTierMessages(); track message) {
+                <p class="field-error">{{ message }}</p>
+              }
+            </fieldset>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+
+      <!-- Save bar, below both tabs -->
+      <div class="actions">
+        <!-- Tells the user there is something to save (or to lose by leaving). -->
+        @if (hasUnsavedChanges()) {
+          <p class="status">Unsaved changes</p>
+        }
+        <!-- Nothing to reset until the user has changed something. -->
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="!eventForm().dirty() || eventForm().submitting()"
+          (click)="reset()"
+        >
+          Reset
+        </button>
+        <!--
+          type="submit": clicking it, or pressing Enter in a field, submits the form (see submitted()).
+          While the API call runs: disabled, and says what it's doing.
+        -->
+        <button mat-flat-button type="submit" [disabled]="eventForm().submitting()">
+          {{ eventForm().submitting() ? 'Saving…' : 'Save' }}
+        </button>
+      </div>
+    </form>
+
+    <!--
+      While the starting values load (or if loading failed), this layer covers the form. The form
+      stays on the page underneath (inert: it can't be clicked or tabbed into), so the card keeps
+      its size instead of jumping when the values arrive.
+    -->
+    @if (newEvent.isLoading()) {
+      <div class="overlay" role="status">
+        <mat-progress-spinner mode="indeterminate" diameter="32" />
+        <span>Loading…</span>
+      </div>
+    } @else if (newEvent.error()) {
+      <div class="overlay" role="alert">
+        <span>The event could not be loaded.</span>
+        <button mat-stroked-button type="button" (click)="newEvent.reload()">Try again</button>
+      </div>
+    }
   </mat-card>
 </main>

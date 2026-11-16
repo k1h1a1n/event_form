@@ -1,4 +1,13 @@
-import { Component, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  linkedSignal,
+  resource,
+  signal,
+} from '@angular/core';
 import { FormField, form, submit } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -7,11 +16,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Schedule } from '../controls/schedule/schedule';
 import { TicketTiers } from '../controls/ticket-tiers/ticket-tiers';
 import { ConfirmDialogData } from '../models/confirm-dialog.model';
-import { defaultEventSetup } from '../models/event-setup.model';
+import { EMPTY_EVENT_SETUP, EventSetupModel } from '../models/event-setup.model';
 import { ConfirmDialog } from '../shared/confirm-dialog';
 import { DESCRIPTION_MAX_LENGTH, eventSetupSchema } from '../validators/event-setup.schema';
 import { EventApi } from './event-api';
@@ -24,6 +34,7 @@ import { EventApi } from './event-api';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatProgressSpinnerModule,
     MatTabsModule,
     Schedule,
     TicketTiers,
@@ -31,10 +42,27 @@ import { EventApi } from './event-api';
   selector: 'app-event-setup',
   styleUrl: './event-setup.scss',
   templateUrl: './event-setup.html',
+  host: {
+    // Fires when the user closes or reloads the tab; see warnBeforeLeaving below.
+    '(window:beforeunload)': 'warnBeforeLeaving($event)',
+  },
 })
 export class EventSetup {
-  /** 1. The data, kept in a plain signal. Starts with the default values. */
-  protected readonly model = signal(defaultEventSetup());
+  private readonly api = inject(EventApi);
+
+  /**
+   * The starting values for a new event, loaded from the API. A resource tracks the request
+   * for us: isLoading() while it runs, error() if it failed, value() once it arrived.
+   */
+  protected readonly newEvent = resource({ loader: () => this.api.loadNewEvent() });
+
+  /**
+   * 1. The data the form edits. A linkedSignal: it follows the loaded event (whenever a new one
+   *    arrives, it starts over from it) and holds the user's edits in between.
+   */
+  protected readonly model = linkedSignal<EventSetupModel>(() =>
+    this.newEvent.hasValue() ? this.newEvent.value() : EMPTY_EVENT_SETUP,
+  );
 
   /**
    * 2. The signal form built on that data. `eventForm.name` is the field for `model().name`.
@@ -50,6 +78,15 @@ export class EventSetup {
 
   /** The description's limit, for the "64 / 500" counter (the same number the rule uses). */
   protected readonly descriptionMaxLength = DESCRIPTION_MAX_LENGTH;
+
+  /**
+   * Whether something isn't saved yet. dirty() alone isn't enough: signal forms don't count
+   * disabled fields as dirty, and the whole form is disabled while a save is running. Until
+   * the API confirms, though, the changes aren't saved.
+   */
+  protected readonly hasUnsavedChanges = computed(
+    () => this.eventForm().dirty() || this.eventForm().submitting(),
+  );
 
   /** This form's own messages about the schedule (starts in the future), once touched. */
   protected readonly scheduleMessages = computed(() => formMessages(this.eventForm.schedule()));
@@ -68,13 +105,21 @@ export class EventSetup {
   );
   protected readonly ticketsHasErrors = computed(() => showsErrors(this.eventForm.ticketTiers));
 
-  private readonly api = inject(EventApi);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly injector = inject(Injector);
 
   /**
-   * Save button. With errors: show them and go to the first one (nothing to confirm yet).
+   * The form was submitted: Save clicked, or Enter pressed in a field. Stop the browser's own
+   * submit (it would reload the page), then save.
+   */
+  protected submitted(event: Event): void {
+    event.preventDefault();
+    this.save();
+  }
+
+  /**
+   * Save. With errors: show them and go to the first one (nothing to confirm yet).
    * Without: ask first, then send the event to the API.
    */
   protected save(): void {
@@ -96,23 +141,29 @@ export class EventSetup {
    * action returns lands on the field it names (here: the event name), like any other error.
    */
   private async sendToApi(): Promise<void> {
-    const saved = await submit(this.eventForm, async () => {
-      const nameProblem = await this.api.save(this.eventForm().value());
-      return nameProblem
-        ? { kind: 'nameTaken', message: nameProblem, fieldTree: this.eventForm.name }
-        : undefined;
-    });
+    try {
+      const saved = await submit(this.eventForm, async () => {
+        const nameProblem = await this.api.save(this.eventForm().value());
+        return nameProblem
+          ? { kind: 'nameTaken', message: nameProblem, fieldTree: this.eventForm.name }
+          : undefined;
+      });
 
-    if (saved) {
-      this.resetToDefaults(); // start over for the next event
-      this.snackBar.open('Event saved.', 'OK', { duration: 4000 });
-    } else {
-      // The form is enabled again only once it has re-rendered, so focus after that.
-      afterNextRender(() => this.focusFirstError(), { injector: this.injector });
+      if (saved) {
+        this.snackBar.open('Event saved.', 'OK', { duration: 4000 });
+        this.startNewEvent(); // ready for the next event
+      } else {
+        // The form is enabled again only once it has re-rendered, so focus after that.
+        afterNextRender(() => this.focusFirstError(), { injector: this.injector });
+      }
+    } catch {
+      // The request itself failed (with a real server: network down, server error). The user's
+      // input stays as it is, so they can simply try again.
+      this.snackBar.open('The event could not be saved. Please try again.', 'OK');
     }
   }
 
-  /** Reset button: after asking, go back to the default values. */
+  /** Reset button: after asking, start over with fresh starting values. */
   protected reset(): void {
     this.confirm(
       {
@@ -120,17 +171,18 @@ export class EventSetup {
         message: 'Your changes will be lost and the form will go back to its default values.',
         confirmLabel: 'Reset',
       },
-      () => this.resetToDefaults(),
+      () => this.startNewEvent(),
     );
   }
 
   /**
-   * Puts the default values back and forgets touched/dirty, so no error messages show and
-   * Reset is disabled again. (The form writes the values into the controls through writeValue.)
+   * Starts over: forget touched/dirty (so no messages and no "Unsaved changes"), go back to the
+   * first tab, and load fresh starting values. When they arrive, `model` follows them.
    */
-  private resetToDefaults(): void {
-    this.eventForm().reset(defaultEventSetup());
+  private startNewEvent(): void {
+    this.eventForm().reset();
     this.selectedTab.set(0);
+    this.newEvent.reload();
   }
 
   /** Opens the confirmation popup and runs `onConfirm` only if the user says yes. */
@@ -171,6 +223,16 @@ export class EventSetup {
   protected tabShown(): void {
     this.focusWhenTabShown?.();
     this.focusWhenTabShown = null;
+  }
+
+  /**
+   * Closing or reloading the tab with unsaved changes: cancelling the event makes the browser
+   * ask "Leave site? Changes you made may not be saved." (browsers use their own wording).
+   */
+  protected warnBeforeLeaving(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) {
+      event.preventDefault();
+    }
   }
 }
 

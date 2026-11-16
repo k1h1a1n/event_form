@@ -15,21 +15,21 @@ export const NO_SCHEDULE_ISSUES: ScheduleIssues = {
 };
 
 /** Returns what is wrong with the date, or null if it is fine. */
-export function dateIssue(date: string): string | null {
+function dateIssue(date: string): string | null {
   if (date === '') return 'Enter a date.';
   if (isoDateToDate(date) === null) return 'Enter a valid date.';
   return null;
 }
 
 /** Returns what is wrong with the start time, or null if it is fine. */
-export function startTimeIssue(time: string): string | null {
+function startTimeIssue(time: string): string | null {
   if (time === '') return 'Enter a start time.';
   if (!TIME_24H.test(time)) return 'Enter a valid time.';
   return null;
 }
 
 /** Returns what is wrong with the duration, or null if it is fine. */
-export function durationIssue(minutes: number | null): string | null {
+function durationIssue(minutes: number | null): string | null {
   if (minutes === null || Number.isNaN(minutes)) return 'Enter a duration.';
   if (!Number.isInteger(minutes)) return 'Use whole minutes.';
   if (minutes < 1) return 'The duration must be at least 1 minute.';

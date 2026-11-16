@@ -23,7 +23,22 @@
 
 // Clip the tab header to the card's rounded corners.
 .card {
+  position: relative; // the .overlay below is placed over the card
   overflow: hidden;
+}
+
+// "Loading…" with a spinner, or "The event could not be loaded." with Try again, laid over
+// the form (which stays underneath, so the card keeps its size).
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2; // above Material's tab content
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  background: color-mix(in srgb, var(--mat-sys-surface) 85%, transparent);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 // ---- Tabs ----
@@ -42,11 +57,23 @@
 }
 
 // The content area of each tab.
+// The tab content keeps one height, so the card doesn't grow and shrink when switching tabs:
+// tall enough for General (the taller tab, with its summary line and a form message), and
+// Tickets is padded to match. It only grows past this when there is more content (5+ tiers).
 .tab-body {
+  box-sizing: border-box;
+  min-height: 26rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   padding: 1.5rem;
+}
+
+// Narrower screens: the schedule's fields wrap onto more lines, so General is taller.
+@media (max-width: 37.5rem) {
+  .tab-body {
+    min-height: 31rem;
+  }
 }
 
 // Less padding on small phones.
@@ -62,9 +89,16 @@
 .actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
   border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+// "Unsaved changes", on the left; margin-right: auto pushes the buttons to the right.
+.status {
+  margin: 0 auto 0 0;
+  color: var(--mat-sys-on-surface-variant);
 }
 
 // A form-level message under a group of fields (e.g. "Choose when the event takes place.").

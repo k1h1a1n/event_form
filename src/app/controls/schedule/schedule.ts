@@ -42,7 +42,13 @@ function formatDuration(minutes: number): string {
 }
 
 @Component({
-  imports: [MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatIconModule, MatInputModule],
+  imports: [
+    MatButtonModule,
+    MatDatepickerModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+  ],
   selector: 'app-schedule',
   styleUrl: './schedule.scss',
   templateUrl: './schedule.html',
