@@ -1,15 +1,20 @@
-import { Component, computed, signal } from '@angular/core';
-import { FormField, form } from '@angular/forms/signals';
+import { Component, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
+import { FormField, form, submit } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Schedule } from '../controls/schedule/schedule';
 import { TicketTiers } from '../controls/ticket-tiers/ticket-tiers';
-import { EMPTY_EVENT_SETUP } from '../models/event-setup.model';
+import { ConfirmDialogData } from '../models/confirm-dialog.model';
+import { defaultEventSetup } from '../models/event-setup.model';
+import { ConfirmDialog } from '../shared/confirm-dialog';
 import { eventSetupSchema } from '../validators/event-setup.schema';
+import { EventApi } from './event-api';
 
 @Component({
   imports: [
@@ -28,8 +33,8 @@ import { eventSetupSchema } from '../validators/event-setup.schema';
   templateUrl: './event-setup.html',
 })
 export class EventSetup {
-  /** 1. The data, kept in a plain signal. Starts blank. */
-  protected readonly model = signal(EMPTY_EVENT_SETUP);
+  /** 1. The data, kept in a plain signal. Starts with the default values. */
+  protected readonly model = signal(defaultEventSetup());
 
   /**
    * 2. The signal form built on that data. `eventForm.name` is the field for `model().name`.
@@ -51,7 +56,24 @@ export class EventSetup {
     formMessages(this.eventForm.ticketTiers()),
   );
 
-  /** Save button: print the form's value, but only when every rule passes. */
+  /**
+   * Whether a tab should show the alert icon: one of its fields is invalid and touched, which
+   * is exactly when that field shows its messages. So icon and messages appear together.
+   */
+  protected readonly generalHasErrors = computed(() =>
+    [this.eventForm.name, this.eventForm.description, this.eventForm.schedule].some(showsErrors),
+  );
+  protected readonly ticketsHasErrors = computed(() => showsErrors(this.eventForm.ticketTiers));
+
+  private readonly api = inject(EventApi);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly injector = inject(Injector);
+
+  /**
+   * Save button. With errors: show them and go to the first one (nothing to confirm yet).
+   * Without: ask first, then send the event to the API.
+   */
   protected save(): void {
     if (this.eventForm().invalid()) {
       // Mark every field as touched, so fields the user never visited show their errors too.
@@ -59,15 +81,63 @@ export class EventSetup {
       this.focusFirstError();
       return;
     }
-    console.log('Event form value:', this.eventForm().value());
+    this.confirm(
+      { title: 'Save event?', message: 'Save the event with these details?', confirmLabel: 'Save' },
+      () => this.sendToApi(),
+    );
   }
 
   /**
-   * Reset button: blank every field, and forget touched/dirty so no error messages show.
-   * (The form writes the blank value into the Schedule control through its writeValue.)
+   * Saves through the API with signal forms' submit(). While it waits, `submitting()` is true:
+   * the schema disables the whole form and the Save button shows "Saving…". An error the
+   * action returns lands on the field it names (here: the event name), like any other error.
    */
+  private async sendToApi(): Promise<void> {
+    const saved = await submit(this.eventForm, async () => {
+      const nameProblem = await this.api.save(this.eventForm().value());
+      return nameProblem
+        ? { kind: 'nameTaken', message: nameProblem, fieldTree: this.eventForm.name }
+        : undefined;
+    });
+
+    if (saved) {
+      this.resetToDefaults(); // start over for the next event
+      this.snackBar.open('Event saved.', 'OK', { duration: 4000 });
+    } else {
+      // The form is enabled again only once it has re-rendered, so focus after that.
+      afterNextRender(() => this.focusFirstError(), { injector: this.injector });
+    }
+  }
+
+  /** Reset button: after asking, go back to the default values. */
   protected reset(): void {
-    this.eventForm().reset(EMPTY_EVENT_SETUP);
+    this.confirm(
+      {
+        title: 'Reset form?',
+        message: 'Your changes will be lost and the form will go back to its default values.',
+        confirmLabel: 'Reset',
+      },
+      () => this.resetToDefaults(),
+    );
+  }
+
+  /**
+   * Puts the default values back and forgets touched/dirty, so no error messages show and
+   * Reset is disabled again. (The form writes the values into the controls through writeValue.)
+   */
+  private resetToDefaults(): void {
+    this.eventForm().reset(defaultEventSetup());
+    this.selectedTab.set(0);
+  }
+
+  /** Opens the confirmation popup and runs `onConfirm` only if the user says yes. */
+  private confirm(data: ConfirmDialogData, onConfirm: () => void): void {
+    this.dialog
+      .open(ConfirmDialog, { data })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (confirmed) onConfirm();
+      });
   }
 
   /** Puts the cursor in the first field (in page order) that has an error. */
@@ -99,6 +169,11 @@ export class EventSetup {
     this.focusWhenTabShown?.();
     this.focusWhenTabShown = null;
   }
+}
+
+/** True when a field has errors that are on screen: it is invalid and has been touched. */
+function showsErrors(field: () => { invalid(): boolean; touched(): boolean }): boolean {
+  return field().invalid() && field().touched();
 }
 
 /**

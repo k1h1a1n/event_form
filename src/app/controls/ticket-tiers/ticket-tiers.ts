@@ -8,10 +8,12 @@ import {
   Validator,
 } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { TicketTier } from '../../models/ticket-tier.model';
+import { ConfirmDialog } from '../../shared/confirm-dialog';
 import {
   NO_TICKET_TIER_ISSUES,
   hasTicketTierIssues,
@@ -57,6 +59,9 @@ export class TicketTiers implements ControlValueAccessor, Validator {
   /** Shown after each price. */
   readonly currency = input('INR');
 
+  /** True while the form disables this field (e.g. during a save). Set by setDisabledState. */
+  protected readonly disabled = signal(false);
+
   private nextId = 0;
 
   /** The rows on screen. */
@@ -68,9 +73,14 @@ export class TicketTiers implements ControlValueAccessor, Validator {
   /** Every rule checked against the rows: one entry (label + price message) per row. */
   private readonly issues = computed(() => ticketTierIssues(this.value()));
 
-  /** The messages to display: none until the field is touched, so we don't nag early. */
+  /**
+   * The messages to display: none until the field is touched, so we don't nag early, and none
+   * while disabled (a disabled field isn't checked).
+   */
   protected readonly shownIssues = computed(() =>
-    this.touched() ? this.issues() : this.issues().map(() => NO_TICKET_TIER_ISSUES),
+    this.touched() && !this.disabled()
+      ? this.issues()
+      : this.issues().map(() => NO_TICKET_TIER_ISSUES),
   );
 
   /** True once the form's maximum is reached: then "Add" is hidden. */
@@ -121,6 +131,11 @@ export class TicketTiers implements ControlValueAccessor, Validator {
     this.onTouched = fn;
   }
 
+  /** The form calls this when it disables or enables the field; the template disables every input. */
+  setDisabledState(isDisabled: boolean): void {
+    this.disabled.set(isDisabled);
+  }
+
   // ---- Validation ----
 
   /**
@@ -148,7 +163,30 @@ export class TicketTiers implements ControlValueAccessor, Validator {
     this.onChange(this.value());
   }
 
+  private readonly dialog = inject(MatDialog);
+
+  /** Delete button. A row with something in it is removed only after the user confirms. */
   protected remove(row: Row): void {
+    const label = row.tier.label.trim();
+    if (label === '' && row.tier.price === null) {
+      this.removeRow(row); // nothing typed in yet: nothing to lose, so don't ask
+      return;
+    }
+    this.dialog
+      .open(ConfirmDialog, {
+        data: {
+          title: 'Remove ticket tier?',
+          message: `${label ? `"${label}"` : 'This tier'} will be removed from the list.`,
+          confirmLabel: 'Remove',
+        },
+      })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (confirmed) this.removeRow(row);
+      });
+  }
+
+  private removeRow(row: Row): void {
     this.rows.update((rows) => rows.filter((r) => r.id !== row.id));
     this.onChange(this.value());
   }

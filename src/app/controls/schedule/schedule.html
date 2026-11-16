@@ -1,6 +1,7 @@
 <!-- Three fields side by side; they wrap onto new lines on narrow screens. -->
 <!-- schedule.ts fills the inputs in when the form writes; the change events report what the user picked or typed; (blur) marks it touched. -->
 <!-- Each <mat-hint class="error"> is empty (and invisible) while its part has no problem to show. -->
+<!-- [disabled]="disabled()": everything is locked while the form disables the field (setDisabledState). -->
 <div class="parts">
   <mat-form-field appearance="outline" class="date">
     <mat-label>Date</mat-label>
@@ -10,11 +11,12 @@
       placeholder="DD/MM/YYYY"
       [matDatepicker]="datePicker"
       [min]="minDate()"
+      [disabled]="disabled()"
       (dateChange)="setDate($event.value, dateInput.value)"
       (blur)="onTouched()"
     />
     <!-- Calendar icon button that opens Material's datepicker below. -->
-    <mat-datepicker-toggle matIconSuffix [for]="datePicker" />
+    <mat-datepicker-toggle matIconSuffix [for]="datePicker" [disabled]="disabled()" />
     <mat-datepicker #datePicker />
     <mat-hint class="error">{{ shownIssues().date }}</mat-hint>
   </mat-form-field>
@@ -25,6 +27,7 @@
       #timeInput
       matInput
       type="time"
+      [disabled]="disabled()"
       (input)="setStartTime(timeInput.value)"
       (blur)="onTouched()"
     />
@@ -34,6 +37,7 @@
       matIconSuffix
       type="button"
       aria-label="Choose a start time"
+      [disabled]="disabled()"
       (click)="timeInput.showPicker()"
     >
       <mat-icon fontSet="material-symbols-outlined">schedule</mat-icon>
@@ -49,6 +53,7 @@
       type="number"
       min="1"
       step="15"
+      [disabled]="disabled()"
       (input)="setDuration(duration.value)"
       (blur)="onTouched()"
     />

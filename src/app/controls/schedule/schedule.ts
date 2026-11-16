@@ -75,6 +75,9 @@ export class Schedule implements ControlValueAccessor, Validator {
   /** Earliest day the calendar lets the user pick. The form using the control decides (or not). */
   readonly minDate = input<Date | null>(null);
 
+  /** True while the form disables this field (e.g. during a save). Set by setDisabledState. */
+  protected readonly disabled = signal(false);
+
   /**
    * The last value the form wrote in. Every write counts, even an identical one: a reset writes
    * a value again precisely to throw away the user's edits.
@@ -87,9 +90,12 @@ export class Schedule implements ControlValueAccessor, Validator {
   /** Every rule checked against what the inputs hold: one message (or null) per part. */
   private readonly issues = computed(() => scheduleIssues(this.schedule(), this.required()));
 
-  /** The messages to display: none until the field is touched, so we don't nag early. */
+  /**
+   * The messages to display: none until the field is touched, so we don't nag early, and none
+   * while disabled (a disabled field isn't checked).
+   */
   protected readonly shownIssues = computed(() =>
-    this.touched() ? this.issues() : NO_SCHEDULE_ISSUES,
+    this.touched() && !this.disabled() ? this.issues() : NO_SCHEDULE_ISSUES,
   );
 
   /** For example "Ends at 8:00 PM · 1 h 30 min", once the schedule is complete and valid. */
@@ -158,6 +164,11 @@ export class Schedule implements ControlValueAccessor, Validator {
   /** The form gives us a function to call when the user leaves the control. */
   registerOnTouched(fn: () => void): void {
     this.onTouched = fn;
+  }
+
+  /** The form calls this when it disables or enables the field; the template disables every input. */
+  setDisabledState(isDisabled: boolean): void {
+    this.disabled.set(isDisabled);
   }
 
   // ---- Validation ----

@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormField, form, required } from '@angular/forms/signals';
+import { FormField, disabled, form, required } from '@angular/forms/signals';
 import { ScheduleValue } from '../../models/schedule.model';
 import { Schedule } from './schedule';
 
@@ -13,8 +13,11 @@ class Host {
   readonly model = signal<{ schedule: ScheduleValue | null }>({
     schedule: { date: '2026-12-05', startTime: '18:30', durationMinutes: 90 },
   });
+  /** Set to true to make the form disable the schedule (like the page does while saving). */
+  readonly locked = signal(false);
   readonly eventForm = form(this.model, (path) => {
     required(path.schedule);
+    disabled(path.schedule, { when: () => this.locked() });
   });
 }
 
@@ -102,6 +105,21 @@ describe('Schedule', () => {
     await fixture.whenStable();
 
     expect(messages()).toEqual(['Enter a date.', 'Enter a start time.', 'Enter a duration.']);
+  });
+
+  it('disables all its inputs and buttons when the form disables the field', async () => {
+    const controls = (): (HTMLInputElement | HTMLButtonElement)[] => [
+      ...fixture.nativeElement.querySelectorAll('app-schedule input, app-schedule button'),
+    ];
+    expect(controls().some((element) => element.disabled)).toBe(false);
+
+    host.locked.set(true);
+    await fixture.whenStable();
+    expect(controls().every((element) => element.disabled)).toBe(true);
+
+    host.locked.set(false);
+    await fixture.whenStable();
+    expect(controls().some((element) => element.disabled)).toBe(false);
   });
 
   it('clears what the user typed when the form is reset', async () => {

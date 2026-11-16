@@ -1,5 +1,6 @@
 <!-- One row per tier. [value] shows the row's starting value; (input) reports what the user typed; (blur) marks it touched. -->
 <!-- Each <mat-hint class="error"> is empty (and invisible) while its part has no problem to show. -->
+<!-- [disabled]="disabled()": everything is locked while the form disables the field (setDisabledState). -->
 @if (rows().length > 0) {
   <ol class="rows">
     @for (row of rows(); track row.id; let index = $index) {
@@ -11,6 +12,7 @@
             matInput
             autocomplete="off"
             [value]="row.seed.label"
+            [disabled]="disabled()"
             (input)="setLabel(row, label.value)"
             (blur)="onTouched()"
           />
@@ -27,6 +29,7 @@
             step="0.01"
             inputmode="decimal"
             [value]="row.seed.price ?? ''"
+            [disabled]="disabled()"
             (input)="setPrice(row, price.value)"
             (blur)="onTouched()"
           />
@@ -39,6 +42,7 @@
           type="button"
           class="remove"
           [attr.aria-label]="'Remove ' + (row.tier.label.trim() || 'tier ' + (index + 1))"
+          [disabled]="disabled()"
           (click)="remove(row)"
         >
           <mat-icon fontSet="material-symbols-outlined">delete</mat-icon>
@@ -54,7 +58,7 @@
 @if (atLimit()) {
   <p class="hint">That is the maximum of {{ maxLength() }} tiers.</p>
 } @else {
-  <button mat-stroked-button type="button" class="add" (click)="add()">
+  <button mat-stroked-button type="button" class="add" [disabled]="disabled()" (click)="add()">
     <mat-icon fontSet="material-symbols-outlined">add</mat-icon>
     Add ticket tier
   </button>

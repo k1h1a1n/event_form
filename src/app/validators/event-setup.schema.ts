@@ -1,9 +1,20 @@
-import { maxLength, minLength, required, schema, validate } from '@angular/forms/signals';
+import {
+  disabled,
+  maxLength,
+  minLength,
+  required,
+  schema,
+  validate,
+} from '@angular/forms/signals';
 import { EventSetupModel } from '../models/event-setup.model';
 import { scheduleStart } from './schedule.validators';
 
 /** The rules for the event setup form. */
 export const eventSetupSchema = schema<EventSetupModel>((path) => {
+  // Nothing can be edited while a save is in progress. Native inputs get `disabled`; the two
+  // custom controls hear about it through their setDisabledState().
+  disabled(path, { when: ({ state }) => state.submitting() });
+
   required(path.name, { message: 'Enter an event name.' });
 
   // The Schedule control checks its own parts (schedule.validators.ts) and treats an empty

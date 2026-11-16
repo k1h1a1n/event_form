@@ -23,6 +23,12 @@
         <ng-template mat-tab-label>
           <mat-icon fontSet="material-symbols-outlined" class="tab-icon">event</mat-icon>
           General
+          <!-- Alert icon while a field on this tab shows an error; the label is read out by screen readers. -->
+          @if (generalHasErrors()) {
+            <mat-icon fontSet="material-symbols-outlined" class="tab-alert" aria-hidden="false" aria-label="has errors">
+              error
+            </mat-icon>
+          }
         </ng-template>
 
         <div class="tab-body">
@@ -56,6 +62,11 @@
         <ng-template mat-tab-label>
           <mat-icon fontSet="material-symbols-outlined" class="tab-icon">confirmation_number</mat-icon>
           Tickets
+          @if (ticketsHasErrors()) {
+            <mat-icon fontSet="material-symbols-outlined" class="tab-alert" aria-hidden="false" aria-label="has errors">
+              error
+            </mat-icon>
+          }
         </ng-template>
 
         <div class="tab-body">
@@ -74,10 +85,18 @@
     <!-- Save bar, below both tabs -->
     <div class="actions">
       <!-- Nothing to reset until the user has changed something. -->
-      <button mat-stroked-button type="button" [disabled]="!eventForm().dirty()" (click)="reset()">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="!eventForm().dirty() || eventForm().submitting()"
+        (click)="reset()"
+      >
         Reset
       </button>
-      <button mat-flat-button type="button" (click)="save()">Save</button>
+      <!-- While the API call runs: disabled, and says what it's doing. -->
+      <button mat-flat-button type="button" [disabled]="eventForm().submitting()" (click)="save()">
+        {{ eventForm().submitting() ? 'Saving…' : 'Save' }}
+      </button>
     </div>
   </mat-card>
 </main>

@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormField, form, maxLength } from '@angular/forms/signals';
+import { FormField, disabled, form, maxLength } from '@angular/forms/signals';
+import { MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { TicketTier } from '../../models/ticket-tier.model';
 import { TicketTiers } from './ticket-tiers';
 
@@ -16,8 +17,11 @@ class Host {
       { label: 'Standard', price: 35 },
     ],
   });
+  /** Set to true to make the form disable the tiers (like the page does while saving). */
+  readonly locked = signal(false);
   readonly eventForm = form(this.model, (path) => {
     maxLength(path.ticketTiers, 3);
+    disabled(path.ticketTiers, { when: () => this.locked() });
   });
 }
 
@@ -26,6 +30,10 @@ describe('TicketTiers', () => {
   let host: Host;
 
   beforeEach(async () => {
+    // No animations, so the confirmation popup opens and closes right away.
+    TestBed.configureTestingModule({
+      providers: [{ provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } }],
+    });
     fixture = TestBed.createComponent(Host);
     host = fixture.componentInstance;
     await fixture.whenStable();
@@ -48,6 +56,18 @@ describe('TicketTiers', () => {
     await fixture.whenStable();
   }
 
+  /** The confirmation popup's text, or null when no popup is open. */
+  function popup(): string | null {
+    return document.querySelector('mat-dialog-container')?.textContent!.replace(/\s+/g, ' ').trim() ?? null;
+  }
+
+  /** Clicks a button in the confirmation popup. */
+  async function answerPopup(label: 'Remove' | 'Cancel'): Promise<void> {
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>('mat-dialog-container button')];
+    buttons.find((button) => button.textContent!.trim() === label)!.click();
+    await fixture.whenStable();
+  }
+
   /** The error messages currently shown under the inputs. */
   function messages(): string[] {
     return [...fixture.nativeElement.querySelectorAll('app-ticket-tiers mat-hint.error')]
@@ -64,13 +84,31 @@ describe('TicketTiers', () => {
     await click('.add');
     await type(inputs()[4], 'VIP');
     await type(inputs()[5], '100');
-    await click('.remove', 0); // remove Early bird
+    await click('.remove', 0); // remove Early bird…
+    await answerPopup('Remove'); // …and confirm
 
     // toMatchObject: the form also tags each list item with a hidden tracking id (a Symbol key).
     expect(host.model().ticketTiers).toMatchObject([
       { label: 'Standard', price: 40 },
       { label: 'VIP', price: 100 },
     ]);
+  });
+
+  it('asks before removing a filled-in tier, and keeps it on Cancel', async () => {
+    await click('.remove', 0);
+    expect(popup()).toContain('"Early bird" will be removed from the list.');
+
+    await answerPopup('Cancel');
+    expect(popup()).toBeNull();
+    expect(host.model().ticketTiers.length).toBe(2); // still there
+  });
+
+  it('removes an empty tier straight away, without asking', async () => {
+    await click('.add'); // a new, empty row
+    await click('.remove', 2);
+
+    expect(popup()).toBeNull();
+    expect(host.model().ticketTiers.length).toBe(2);
   });
 
   it('makes the parent form invalid while a row is invalid', async () => {
@@ -105,6 +143,17 @@ describe('TicketTiers', () => {
     await click('.add'); // 3 tiers: the form's maxLength
     expect(fixture.nativeElement.querySelector('.add')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('That is the maximum of 3 tiers.');
+  });
+
+  it('disables every input and button when the form disables the field', async () => {
+    const controls = (): (HTMLInputElement | HTMLButtonElement)[] => [
+      ...fixture.nativeElement.querySelectorAll('app-ticket-tiers input, app-ticket-tiers button'),
+    ];
+    expect(controls().some((element) => element.disabled)).toBe(false);
+
+    host.locked.set(true);
+    await fixture.whenStable();
+    expect(controls().every((element) => element.disabled)).toBe(true); // names, prices, remove, add
   });
 
   it('clears the rows when the form is reset', async () => {

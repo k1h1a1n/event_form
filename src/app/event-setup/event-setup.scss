@@ -32,6 +32,15 @@
   margin-right: 0.5rem;
 }
 
+// Red alert icon after a tab's name while one of its fields has an error.
+.tab-alert {
+  margin-left: 0.375rem;
+  color: var(--mat-sys-error);
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
 // The content area of each tab.
 .tab-body {
   display: flex;
