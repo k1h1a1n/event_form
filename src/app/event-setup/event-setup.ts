@@ -13,7 +13,7 @@ import { TicketTiers } from '../controls/ticket-tiers/ticket-tiers';
 import { ConfirmDialogData } from '../models/confirm-dialog.model';
 import { defaultEventSetup } from '../models/event-setup.model';
 import { ConfirmDialog } from '../shared/confirm-dialog';
-import { eventSetupSchema } from '../validators/event-setup.schema';
+import { DESCRIPTION_MAX_LENGTH, eventSetupSchema } from '../validators/event-setup.schema';
 import { EventApi } from './event-api';
 
 @Component({
@@ -47,6 +47,9 @@ export class EventSetup {
 
   /** Events can't be in the past, so the calendar starts at today. */
   protected readonly today = new Date();
+
+  /** The description's limit, for the "64 / 500" counter (the same number the rule uses). */
+  protected readonly descriptionMaxLength = DESCRIPTION_MAX_LENGTH;
 
   /** This form's own messages about the schedule (starts in the future), once touched. */
   protected readonly scheduleMessages = computed(() => formMessages(this.eventForm.schedule()));

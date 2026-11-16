@@ -2,12 +2,16 @@ import {
   disabled,
   maxLength,
   minLength,
+  pattern,
   required,
   schema,
   validate,
 } from '@angular/forms/signals';
 import { EventSetupModel } from '../models/event-setup.model';
 import { scheduleStart } from './schedule.validators';
+
+export const NAME_MAX_LENGTH = 80;
+export const DESCRIPTION_MAX_LENGTH = 500;
 
 /** The rules for the event setup form. */
 export const eventSetupSchema = schema<EventSetupModel>((path) => {
@@ -16,6 +20,17 @@ export const eventSetupSchema = schema<EventSetupModel>((path) => {
   disabled(path, { when: ({ state }) => state.submitting() });
 
   required(path.name, { message: 'Enter an event name.' });
+  // required() accepts '   ', so also ask for at least one character that isn't a space.
+  pattern(path.name, /\S/, { message: 'Enter an event name.' });
+  // maxLength also sets the input's native maxlength, so typing stops at the limit; the rule
+  // still catches longer text that is pasted in or loaded.
+  maxLength(path.name, NAME_MAX_LENGTH, {
+    message: `Use at most ${NAME_MAX_LENGTH} characters.`,
+  });
+
+  maxLength(path.description, DESCRIPTION_MAX_LENGTH, {
+    message: `Use at most ${DESCRIPTION_MAX_LENGTH} characters.`,
+  });
 
   // The Schedule control checks its own parts (schedule.validators.ts) and treats an empty
   // schedule as fine. Whether this form needs one, and when it may start, is decided here.

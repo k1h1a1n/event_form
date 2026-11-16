@@ -42,7 +42,10 @@
           <mat-form-field appearance="outline">
             <mat-label>Description (optional)</mat-label>
             <textarea matInput rows="4" [formField]="eventForm.description"></textarea>
-            <mat-hint align="end">{{ eventForm.description().value().length }} / 500</mat-hint>
+            <mat-hint align="end">
+              {{ eventForm.description().value().length }} / {{ descriptionMaxLength }}
+            </mat-hint>
+            <mat-error>{{ eventForm.description().errors()[0]?.message }}</mat-error>
           </mat-form-field>
 
           <fieldset class="group">
