@@ -1,11 +1,32 @@
 # Event Setup
 
+## How to run
+
+You need Node `^22.22.3`, `^24.15.0` or `>=26` (what Angular 22 supports).
+
+npm install
+npm start                    # opens on http://localhost:4200
+npm test -- --watch=false    # runs the unit tests once (Vitest)
+npm run build                # production build in dist/
+
+
+## Notes
+
+- There's no real backend. `event-api.ts` waits a moment like a request would, gives the starting
+  values for a new event and saves events in `localStorage` (key `event-setup.saved-events`).
+  Event names have to be unique, that's checked on "save" like a server would.
+- After saving, the form starts a new event with default values.
+- Dates are shown and typed as dd/mm/yyyy but stored as `YYYY-MM-DD`. Events can't start in the
+  past.
+
+## Answers
+
 ### 1. How does a value travel from the parent form into your ticket tiers control and back out again? What is the contract between them?
 
 The page binds it with `<app-ticket-tiers [formField]="eventForm.ticketTiers" />` in
 `event-setup.html`. `ticket-tiers.ts` provides `NG_VALUE_ACCESSOR` (through `provideFormControl`
-in `shared/form-control.ts`), so `[formField]` uses the ControlValueAccessor path and calls `writeValue` whenever
-the field's value changes or the form is reset.
+in `shared/form-control.ts`), so `[formField]` uses the ControlValueAccessor path and calls
+`writeValue` whenever the field's value changes or the form is reset.
 
 In `writeValue` I turn each tier into a row with an `id`, a `seed` and the `tier`. The `id` is
 what `@for` tracks, and the inputs only ever read from `seed`, so when I update a row while the
@@ -33,7 +54,6 @@ the field's errors. So `eventForm.ticketTiers()` becomes invalid, and since a pa
 when one of its children is, `eventForm()` is invalid too. `save()` in `event-setup.ts` then marks
 everything as touched and jumps to the first error instead of saving.
 
-
 ### 3. How does the surrounding form's state reach the inside of your controls?
 
 All of it comes through `[formField]`:
@@ -51,10 +71,9 @@ All of it comes through `[formField]`:
   on the host element, which can't take focus, so `redirectHostFocus()` in
   `shared/form-control.ts` sends it to the control's `focusFirstProblem()`.
 
-
 ### 4. Your controls are ControlValueAccessors, but the form around them is a signal form. How do the two fit together, and what would you do differently if you wrote the controls natively for signal forms instead?
 
- When `[formField]` finds `NG_VALUE_ACCESSOR` it registers
+When `[formField]` finds `NG_VALUE_ACCESSOR` it registers
 `onChange` and `onTouched`, calls `writeValue` and `setDisabledState`, runs `NG_VALIDATORS` into
 the field's errors.
 
