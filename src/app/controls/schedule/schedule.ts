@@ -3,20 +3,12 @@ import {
   ElementRef,
   afterRenderEffect,
   computed,
-  inject,
   input,
   linkedSignal,
   signal,
   viewChild,
 } from '@angular/core';
-import {
-  AbstractControl,
-  ControlValueAccessor,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
-  ValidationErrors,
-  Validator,
-} from '@angular/forms';
+import { AbstractControl, ControlValueAccessor, ValidationErrors, Validator } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_NATIVE_DATE_FORMATS } from '@angular/material/core';
 import { MatDatepickerInput, MatDatepickerModule } from '@angular/material/datepicker';
@@ -24,11 +16,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { EMPTY_SCHEDULE, ScheduleValue } from '../../models/schedule.model';
+import { provideFormControl, redirectHostFocus } from '../../shared/form-control';
 import { dateToIsoDate, isoDateToDate } from '../../utils/date-time';
 import { DayMonthYearDateAdapter } from '../../utils/day-month-year-date-adapter';
+import { hasIssues } from '../../validators/issues';
 import {
   NO_SCHEDULE_ISSUES,
-  hasScheduleIssues,
   isScheduleEmpty,
   scheduleIssues,
   scheduleStart,
@@ -53,11 +46,8 @@ function formatDuration(minutes: number): string {
   styleUrl: './schedule.scss',
   templateUrl: './schedule.html',
   providers: [
-    // "This component is a form control": the form talks to it through the
-    // ControlValueAccessor methods below.
-    { provide: NG_VALUE_ACCESSOR, useExisting: Schedule, multi: true },
-    // "This component can check its own value": the form calls validate() below.
-    { provide: NG_VALIDATORS, useExisting: Schedule, multi: true },
+    // A form control (the ControlValueAccessor methods below) that checks its own value (validate()).
+    provideFormControl(Schedule),
     // Material's datepicker works with Date objects through a DateAdapter. Ours reads and
     // shows dd/mm/yyyy. Provided here because Dates are an inside detail: the form only
     // ever sees 'YYYY-MM-DD' strings.
@@ -109,7 +99,7 @@ export class Schedule implements ControlValueAccessor, Validator {
     const schedule = this.schedule();
     const start = scheduleStart(schedule);
     const minutes = schedule.durationMinutes;
-    if (!start || minutes === null || hasScheduleIssues(this.issues())) return null;
+    if (!start || minutes === null || hasIssues(this.issues())) return null;
 
     const end = new Date(start.getTime() + minutes * 60_000);
     const day = end.getDate() === start.getDate() ? '' : 'the next day ';
@@ -136,10 +126,8 @@ export class Schedule implements ControlValueAccessor, Validator {
       },
     });
 
-    // To focus a field, [formField] calls focus() on the control's host element, <app-schedule>.
-    // That element can't take focus itself, so pass it on to the right input instead.
-    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-    host.focus = () => this.focusFirstProblem();
+    // When the form focuses this field (e.g. Save with errors), focus the right input inside.
+    redirectHostFocus(() => this.focusFirstProblem());
   }
 
   /** Focuses the first part with a problem, or the date when none has one. */
@@ -185,7 +173,7 @@ export class Schedule implements ControlValueAccessor, Validator {
    */
   validate(control: AbstractControl<ScheduleValue | null>): ValidationErrors | null {
     const issues = scheduleIssues(control.value);
-    return hasScheduleIssues(issues) ? { schedule: issues } : null;
+    return hasIssues(issues) ? { schedule: issues } : null;
   }
 
   // ---- Control -> form ----

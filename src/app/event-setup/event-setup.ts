@@ -11,7 +11,6 @@ import {
 import { FormField, form, submit } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,9 +19,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Schedule } from '../controls/schedule/schedule';
 import { TicketTiers } from '../controls/ticket-tiers/ticket-tiers';
-import { ConfirmDialogData } from '../models/confirm-dialog.model';
 import { EMPTY_EVENT_SETUP, EventSetupModel } from '../models/event-setup.model';
-import { ConfirmDialog } from '../shared/confirm-dialog';
+import { ConfirmService } from '../shared/confirm-dialog';
 import { DESCRIPTION_MAX_LENGTH, eventSetupSchema } from '../validators/event-setup.schema';
 import { EventApi } from './event-api';
 
@@ -105,7 +103,7 @@ export class EventSetup {
   );
   protected readonly ticketsHasErrors = computed(() => showsErrors(this.eventForm.ticketTiers));
 
-  private readonly dialog = inject(MatDialog);
+  private readonly confirm = inject(ConfirmService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly injector = inject(Injector);
 
@@ -122,17 +120,19 @@ export class EventSetup {
    * Save. With errors: show them and go to the first one (nothing to confirm yet).
    * Without: ask first, then send the event to the API.
    */
-  protected save(): void {
+  protected async save(): Promise<void> {
     if (this.eventForm().invalid()) {
       // Mark every field as touched, so fields the user never visited show their errors too.
       this.eventForm().markAsTouched();
       this.focusFirstError();
       return;
     }
-    this.confirm(
-      { title: 'Save event?', message: 'Save the event with these details?', confirmLabel: 'Save' },
-      () => this.sendToApi(),
-    );
+    const confirmed = await this.confirm.ask({
+      title: 'Save event?',
+      message: 'Save the event with these details?',
+      confirmLabel: 'Save',
+    });
+    if (confirmed) await this.sendToApi();
   }
 
   /**
@@ -164,15 +164,13 @@ export class EventSetup {
   }
 
   /** Reset button: after asking, start over with fresh starting values. */
-  protected reset(): void {
-    this.confirm(
-      {
-        title: 'Reset form?',
-        message: 'Your changes will be lost and the form will go back to its default values.',
-        confirmLabel: 'Reset',
-      },
-      () => this.startNewEvent(),
-    );
+  protected async reset(): Promise<void> {
+    const confirmed = await this.confirm.ask({
+      title: 'Reset form?',
+      message: 'Your changes will be lost and the form will go back to its default values.',
+      confirmLabel: 'Reset',
+    });
+    if (confirmed) this.startNewEvent();
   }
 
   /**
@@ -183,16 +181,6 @@ export class EventSetup {
     this.eventForm().reset();
     this.selectedTab.set(0);
     this.newEvent.reload();
-  }
-
-  /** Opens the confirmation popup and runs `onConfirm` only if the user says yes. */
-  private confirm(data: ConfirmDialogData, onConfirm: () => void): void {
-    this.dialog
-      .open(ConfirmDialog, { data })
-      .afterClosed()
-      .subscribe((confirmed) => {
-        if (confirmed) onConfirm();
-      });
   }
 
   /** Puts the cursor in the first field (in page order) that has an error. */

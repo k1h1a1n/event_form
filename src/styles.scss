@@ -37,4 +37,9 @@ body {
   margin: 0;
   height: 100%;
 }
-/* You can add global styles to this file, and also import other style files */
+
+// A validation message, e.g. under the fields inside the Schedule and Ticket tiers controls.
+// Global so every component can use it without repeating it.
+.error {
+  color: var(--mat-sys-error);
+}

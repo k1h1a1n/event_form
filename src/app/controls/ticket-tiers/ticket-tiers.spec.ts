@@ -58,12 +58,17 @@ describe('TicketTiers', () => {
 
   /** The confirmation popup's text, or null when no popup is open. */
   function popup(): string | null {
-    return document.querySelector('mat-dialog-container')?.textContent!.replace(/\s+/g, ' ').trim() ?? null;
+    return (
+      document.querySelector('mat-dialog-container')?.textContent!.replace(/\s+/g, ' ').trim() ??
+      null
+    );
   }
 
   /** Clicks a button in the confirmation popup. */
   async function answerPopup(label: 'Remove' | 'Cancel'): Promise<void> {
-    const buttons = [...document.querySelectorAll<HTMLButtonElement>('mat-dialog-container button')];
+    const buttons = [
+      ...document.querySelectorAll<HTMLButtonElement>('mat-dialog-container button'),
+    ];
     buttons.find((button) => button.textContent!.trim() === label)!.click();
     await fixture.whenStable();
   }
@@ -127,7 +132,10 @@ describe('TicketTiers', () => {
 
     host.eventForm().markAsTouched(); // what Save does
     await fixture.whenStable();
-    expect(messages()).toEqual(['Another tier already has this name.', 'The price cannot be negative.']);
+    expect(messages()).toEqual([
+      'Another tier already has this name.',
+      'The price cannot be negative.',
+    ]);
   });
 
   it('shows the problems of existing rows, instead of adding a row, while one is invalid', async () => {

@@ -14,7 +14,8 @@ export class DayMonthYearDateAdapter extends NativeDateAdapter {
     if (value.trim() === '') return null;
     const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value.trim());
     const [, day, month, year] = match ?? [];
-    const date = match && isoDateToDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+    const date =
+      match && isoDateToDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
     return date ?? this.invalid();
   }
 

@@ -61,11 +61,6 @@ export function scheduleIssues(schedule: ScheduleValue | null, required = false)
   };
 }
 
-/** True if any part has a problem. */
-export function hasScheduleIssues(issues: ScheduleIssues): boolean {
-  return Object.values(issues).some(Boolean);
-}
-
 /** When the schedule starts (its date at its start time), or null while either isn't valid. */
 export function scheduleStart(schedule: ScheduleValue | null): Date | null {
   if (!schedule || dateIssue(schedule.date) || startTimeIssue(schedule.startTime)) return null;

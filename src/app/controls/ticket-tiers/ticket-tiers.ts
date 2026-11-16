@@ -8,26 +8,16 @@ import {
   input,
   signal,
 } from '@angular/core';
-import {
-  AbstractControl,
-  ControlValueAccessor,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
-  ValidationErrors,
-  Validator,
-} from '@angular/forms';
+import { AbstractControl, ControlValueAccessor, ValidationErrors, Validator } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { TicketTier } from '../../models/ticket-tier.model';
-import { ConfirmDialog } from '../../shared/confirm-dialog';
-import {
-  NO_TICKET_TIER_ISSUES,
-  hasTicketTierIssues,
-  ticketTierIssues,
-} from '../../validators/ticket-tier.validators';
+import { ConfirmService } from '../../shared/confirm-dialog';
+import { provideFormControl, redirectHostFocus } from '../../shared/form-control';
+import { hasIssues } from '../../validators/issues';
+import { NO_TICKET_TIER_ISSUES, ticketTierIssues } from '../../validators/ticket-tier.validators';
 
 /**
  * One row on screen.
@@ -48,11 +38,8 @@ interface Row {
   styleUrl: './ticket-tiers.scss',
   templateUrl: './ticket-tiers.html',
   providers: [
-    // "This component is a form control": the form talks to it through the
-    // ControlValueAccessor methods below.
-    { provide: NG_VALUE_ACCESSOR, useExisting: TicketTiers, multi: true },
-    // "This component can check its own value": the form calls validate() below.
-    { provide: NG_VALIDATORS, useExisting: TicketTiers, multi: true },
+    // A form control (the ControlValueAccessor methods below) that checks its own value (validate()).
+    provideFormControl(TicketTiers),
   ],
 })
 export class TicketTiers implements ControlValueAccessor, Validator {
@@ -101,16 +88,17 @@ export class TicketTiers implements ControlValueAccessor, Validator {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
 
+  private readonly confirm = inject(ConfirmService);
+
   constructor() {
-    // To focus a field, [formField] calls focus() on the control's host element,
-    // <app-ticket-tiers>. That element can't take focus itself, so pass it on.
-    this.host.focus = () => this.focusFirstProblem();
+    // When the form focuses this field (e.g. Save with errors), focus the right input inside.
+    redirectHostFocus(() => this.focusFirstProblem());
   }
 
   /** Focuses the first name or price with a problem; with no problem (or no rows), "Add". */
   focusFirstProblem(): void {
     const issues = this.issues();
-    const row = issues.findIndex((tier) => tier.label !== null || tier.price !== null);
+    const row = issues.findIndex(hasIssues);
     const inputs = this.host.querySelectorAll<HTMLInputElement>('input'); // name, price, name, …
     const target =
       row === -1
@@ -156,7 +144,7 @@ export class TicketTiers implements ControlValueAccessor, Validator {
    */
   validate(control: AbstractControl<TicketTier[] | null>): ValidationErrors | null {
     const issues = ticketTierIssues(control.value);
-    return hasTicketTierIssues(issues) ? { ticketTiers: issues } : null;
+    return issues.some(hasIssues) ? { ticketTiers: issues } : null;
   }
 
   // ---- Control -> form ----
@@ -164,7 +152,7 @@ export class TicketTiers implements ControlValueAccessor, Validator {
   protected add(): void {
     // Finish the existing rows first: if one has a problem, show the messages (marking the field
     // touched makes them appear), move the cursor there, and don't add a new row yet.
-    if (hasTicketTierIssues(this.issues())) {
+    if (this.issues().some(hasIssues)) {
       this.onTouched();
       this.focusFirstProblem();
       return;
@@ -180,27 +168,19 @@ export class TicketTiers implements ControlValueAccessor, Validator {
     );
   }
 
-  private readonly dialog = inject(MatDialog);
-
   /** Delete button. A row with something in it is removed only after the user confirms. */
-  protected remove(row: Row): void {
+  protected async remove(row: Row): Promise<void> {
     const label = row.tier.label.trim();
-    if (label === '' && row.tier.price === null) {
-      this.removeRow(row); // nothing typed in yet: nothing to lose, so don't ask
-      return;
-    }
-    this.dialog
-      .open(ConfirmDialog, {
-        data: {
-          title: 'Remove ticket tier?',
-          message: `${label ? `"${label}"` : 'This tier'} will be removed from the list.`,
-          confirmLabel: 'Remove',
-        },
-      })
-      .afterClosed()
-      .subscribe((confirmed) => {
-        if (confirmed) this.removeRow(row);
-      });
+    // Nothing typed in yet: nothing to lose, so don't ask.
+    const isEmpty = label === '' && row.tier.price === null;
+    const confirmed =
+      isEmpty ||
+      (await this.confirm.ask({
+        title: 'Remove ticket tier?',
+        message: `${label ? `"${label}"` : 'This tier'} will be removed from the list.`,
+        confirmLabel: 'Remove',
+      }));
+    if (confirmed) this.removeRow(row);
   }
 
   private removeRow(row: Row): void {

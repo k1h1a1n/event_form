@@ -1,14 +1,12 @@
 import { Injectable } from '@angular/core';
 import { EventSetupModel, defaultEventSetup } from '../models/event-setup.model';
+import { sameName } from '../utils/text';
 
 /** Where the saved events are kept, so they survive a page reload. */
 const STORAGE_KEY = 'event-setup.saved-events';
 
 /** Waits a moment, like a real network request would. */
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-/** Names are compared without case or surrounding spaces: "Angular Meetup" = " angular meetup". */
-const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 /**
  * A stand-in for the backend. It answers after a short delay and keeps the saved events in

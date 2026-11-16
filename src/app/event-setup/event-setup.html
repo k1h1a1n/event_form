@@ -30,16 +30,11 @@
         <!-- General tab -->
         <mat-tab>
           <ng-template mat-tab-label>
-            <mat-icon fontSet="material-symbols-outlined" class="tab-icon">event</mat-icon>
+            <mat-icon class="tab-icon">event</mat-icon>
             General
             <!-- Alert icon while a field on this tab shows an error; the label is read out by screen readers. -->
             @if (generalHasErrors()) {
-              <mat-icon
-                fontSet="material-symbols-outlined"
-                class="tab-alert"
-                aria-hidden="false"
-                aria-label="has errors"
-              >
+              <mat-icon class="tab-alert" aria-hidden="false" aria-label="has errors">
                 error
               </mat-icon>
             }
@@ -78,17 +73,10 @@
         <!-- Tickets tab -->
         <mat-tab>
           <ng-template mat-tab-label>
-            <mat-icon fontSet="material-symbols-outlined" class="tab-icon"
-              >confirmation_number</mat-icon
-            >
+            <mat-icon class="tab-icon">confirmation_number</mat-icon>
             Tickets
             @if (ticketsHasErrors()) {
-              <mat-icon
-                fontSet="material-symbols-outlined"
-                class="tab-alert"
-                aria-hidden="false"
-                aria-label="has errors"
-              >
+              <mat-icon class="tab-alert" aria-hidden="false" aria-label="has errors">
                 error
               </mat-icon>
             }

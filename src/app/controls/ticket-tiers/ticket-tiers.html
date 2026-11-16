@@ -45,7 +45,7 @@
           [disabled]="disabled()"
           (click)="remove(row)"
         >
-          <mat-icon fontSet="material-symbols-outlined">delete</mat-icon>
+          <mat-icon>delete</mat-icon>
         </button>
       </li>
     }
@@ -59,7 +59,7 @@
   <p class="hint">That is the maximum of {{ maxLength() }} tiers.</p>
 } @else {
   <button mat-stroked-button type="button" class="add" [disabled]="disabled()" (click)="add()">
-    <mat-icon fontSet="material-symbols-outlined">add</mat-icon>
+    <mat-icon>add</mat-icon>
     Add ticket tier
   </button>
 }

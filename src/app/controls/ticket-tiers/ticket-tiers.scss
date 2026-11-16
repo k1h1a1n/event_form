@@ -31,11 +31,6 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-// Validation message under a field.
-.error {
-  color: var(--mat-sys-error);
-}
-
 // On a phone: name on its own line, then price + delete button.
 @media (max-width: 30rem) {
   .row {
